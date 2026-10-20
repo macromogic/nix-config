@@ -64,6 +64,10 @@ in
 
   programs.zsh = {
     enable = true;
+    # rustup/cargo, installed outside Nix.
+    envExtra = ''
+      [[ -f "$HOME/.cargo/env" ]] && . "$HOME/.cargo/env"
+    '';
     autosuggestion.enable = true;
     syntaxHighlighting.enable = true;
 

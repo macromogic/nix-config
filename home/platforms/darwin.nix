@@ -8,6 +8,11 @@
     NVM_DIR = "$HOME/.nvm";
   };
 
+  # Login shells that never read .zshrc still need Homebrew.
+  programs.zsh.profileExtra = ''
+    eval "$(/opt/homebrew/bin/brew shellenv)"
+  '';
+
   programs.zsh.initContent = lib.mkAfter ''
     eval "$(/opt/homebrew/bin/brew shellenv)"
     export PATH="/opt/homebrew/opt/bzip2/bin:$PATH"
