@@ -1,0 +1,20 @@
+termcapinfo xterm* ti@:te@
+startup_message off
+defscrollback 30000
+hardstatus string '%{= Kd} %{= Kd}%-w%{= Kr}[%{= KW}%n %t%{= Kr}]%{= Kd}%+w %-= %{KG} %H%{KW}|%{KY}%S%{KW}|%D %M %d %Y%{= Kc} %C%A%{-}'
+# Hide hardstatus: ctrl-a f
+bind f eval "hardstatus ignore"
+# Show hardstatus: ctrl-a F
+bind F eval "hardstatus alwayslastline"
+hardstatus alwayslastline
+altscreen on
+bind -k ku focus up
+bind -k kd focus down
+bind -k kr focus right
+bind -k kl focus left
+bind h focus left
+bind j focus down
+bind k focus up
+bind l focus right
+bind t focus top
+bind b focus bottom
