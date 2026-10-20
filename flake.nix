@@ -7,6 +7,11 @@
       url = "github:nix-community/home-manager";
       inputs.nixpkgs.follows = "nixpkgs";
     };
+    # Prebuilt package index for comma, refreshed weekly upstream.
+    nix-index-database = {
+      url = "github:nix-community/nix-index-database";
+      inputs.nixpkgs.follows = "nixpkgs";
+    };
     # Custom oh-my-zsh plugin, not a flake.
     bark = {
       url = "github:macromogic/bark";
@@ -14,7 +19,7 @@
     };
   };
 
-  outputs = { nixpkgs, home-manager, ... }@inputs:
+  outputs = { nixpkgs, home-manager, nix-index-database, ... }@inputs:
     let
       # role is what a machine is for (local | remote); the platform module
       # follows from system, so hosts never pick it by hand.
@@ -26,6 +31,7 @@
           pkgs = nixpkgs.legacyPackages.${system};
           extraSpecialArgs = { inherit inputs; };
           modules = [
+            nix-index-database.homeModules.nix-index
             ./home/common.nix
             ./home/roles/${role}.nix
             (if isDarwin then ./home/platforms/darwin.nix else ./home/platforms/linux.nix)

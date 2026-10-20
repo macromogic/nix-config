@@ -42,6 +42,14 @@ in
     })
   ];
 
+  # `, <cmd>` runs a command from nixpkgs without installing it. Also gives
+  # zsh a command-not-found hint naming the package that provides <cmd>.
+  programs.nix-index-database.comma.enable = true;
+
+  # Resolve `nixpkgs#...` (comma, nix shell, nix run) to the pinned input
+  # instead of re-downloading the latest unstable tarball.
+  nix.registry.nixpkgs.flake = inputs.nixpkgs;
+
   home.sessionVariables = {
     LANG = "en_US.UTF-8";
     LC_ALL = "en_US.UTF-8";
