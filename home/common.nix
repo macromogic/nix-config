@@ -101,7 +101,9 @@ in
       # Per-machine settings kept out of this repo (CUDA, research
       # toolchains, conda, ...). Sourced last so they win on PATH.
       (lib.mkOrder 2000 ''
-        [[ -f ~/.zshrc_host ]] && source ~/.zshrc_host
+        # `if`, not `&&`: a missing file must not leave $? = 1 at the
+        # first prompt.
+        if [[ -f ~/.zshrc_host ]]; then source ~/.zshrc_host; fi
       '')
     ];
   };
