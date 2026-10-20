@@ -51,6 +51,12 @@
           role = "local";
         };
 
+        "wh25@tdx" = mkHome {
+          system = "x86_64-linux";
+          username = "wh25";
+          role = "remote";
+        };
+
         # Template for dev servers: copy, rename, adjust system/username.
         "macmo@remote-template" = mkHome {
           system = "x86_64-linux";
