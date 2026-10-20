@@ -35,12 +35,11 @@ in
       runtimeInputs = [ git ];
       text = builtins.readFile ./../scripts/git-setup.sh;
     })
-    (writeShellApplication {
-      name = "agent-cli-init";
-      runtimeInputs = [ coreutils curl nodejs_24 ];
-      text = builtins.readFile ./../scripts/agent-cli-init.sh;
-    })
-  ];
+  ] ++ (with inputs.llm-agents.packages.${pkgs.stdenv.hostPlatform.system}; [
+    claude-code
+    codex
+    opencode
+  ]);
 
   # `, <cmd>` runs a command from nixpkgs without installing it. Also gives
   # zsh a command-not-found hint naming the package that provides <cmd>.
@@ -55,6 +54,9 @@ in
     LC_ALL = "en_US.UTF-8";
     LESSOPEN = "| ${pkgs.sourceHighlight}/bin/src-hilite-lesspipe.sh %s";
     LESS = " -R ";
+    # Versions come from the llm-agents input; a self-update cannot write
+    # to the store. (claude-code's wrapper already disables its updater.)
+    OPENCODE_DISABLE_AUTOUPDATE = "1";
   };
 
   home.file = {
@@ -94,8 +96,7 @@ in
         [[ -f ~/.p10k.zsh ]] && source ~/.p10k.zsh
         # Unmanaged on purpose: never commit secrets to this repo.
         [[ -f ~/.zshrc_secrets ]] && source ~/.zshrc_secrets
-        # Self-updating agent CLIs installed by agent-cli-init.
-        export PATH="$HOME/.opencode/bin:$HOME/.local/bin:$PATH"
+        export PATH="$HOME/.local/bin:$PATH"
         export PATH="$HOME/nora/bin:$PATH"
       ''
       # Per-machine settings kept out of this repo (CUDA, research
@@ -114,6 +115,17 @@ in
     if [ ! -d "$HOME/.config/nvim" ]; then
       run ${pkgs.git}/bin/git clone https://github.com/macromogic/lazyvim.git "$HOME/.config/nvim"
     fi
+  '';
+
+  # Leftover installer copies in ~/.local/bin win over the Nix ones on PATH
+  # (that dir must stay first for host toolchains), so point them out.
+  home.activation.agentCliLeftovers = lib.hm.dag.entryAfter [ "writeBoundary" ] ''
+    for f in "$HOME"/.local/bin/{claude,codex,opencode} "$HOME"/.opencode/bin/opencode \
+             "$HOME"/.nvm/versions/node/*/bin/{claude,codex,opencode}; do
+      if [ -e "$f" ]; then
+        echo "agent CLIs: leftover installer copy may shadow the Nix one: $f"
+      fi
+    done
   '';
 
   # Nora updates itself with `nora update` (git pull), so it is also a

@@ -12,6 +12,10 @@
       url = "github:nix-community/nix-index-database";
       inputs.nixpkgs.follows = "nixpkgs";
     };
+    # Agent CLIs (claude-code, codex, opencode), updated daily upstream.
+    # Deliberately not following our nixpkgs, so builds match
+    # cache.numtide.com.
+    llm-agents.url = "github:numtide/llm-agents.nix";
     # Custom oh-my-zsh plugin, not a flake.
     bark = {
       url = "github:macromogic/bark";
