@@ -57,6 +57,10 @@ in
     # Versions come from the llm-agents input; a self-update cannot write
     # to the store. (claude-code's wrapper already disables its updater.)
     OPENCODE_DISABLE_AUTOUPDATE = "1";
+    # The llm-agents wrapper defaults this to `system`, whose store comes up
+    # empty on macOS (UNABLE_TO_GET_ISSUER_CERT_LOCALLY). Restore Claude
+    # Code's own default.
+    CLAUDE_CODE_CERT_STORE = "bundled,system";
   };
 
   home.file = {
