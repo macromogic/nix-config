@@ -37,7 +37,7 @@ in
     })
     (writeShellApplication {
       name = "agent-cli-init";
-      runtimeInputs = [ curl nodejs_24 ];
+      runtimeInputs = [ coreutils curl nodejs_24 ];
       text = builtins.readFile ./../scripts/agent-cli-init.sh;
     })
   ];

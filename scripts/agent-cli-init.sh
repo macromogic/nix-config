@@ -6,7 +6,10 @@ install_codex() { npm install -g --prefix "$HOME/.local" @openai/codex; }
 install_opencode() { curl -fsSL https://opencode.ai/install | bash; }
 
 for tool in claude codex opencode; do
-  mapfile -t found < <(type -ap "$tool" | awk '!seen[$0]++' || true)
+  # Dedupe by resolved file: /bin is often a symlink to /usr/bin.
+  mapfile -t found < <(type -ap "$tool" | while read -r p; do
+    printf '%s\t%s\n' "$(realpath "$p")" "$p"
+  done | awk -F'\t' '!seen[$1]++ { print $2 }' || true)
   if (( ${#found[@]} > 0 )); then
     echo "$tool: found ${found[0]}"
     if (( ${#found[@]} > 1 )); then
