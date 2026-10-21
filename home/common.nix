@@ -39,6 +39,7 @@ in
     claude-code
     codex
     opencode
+    t3code # `t3`: T3 Code server and CLI
   ]);
 
   # `, <cmd>` runs a command from nixpkgs without installing it. Also gives
@@ -61,6 +62,9 @@ in
     # empty on macOS (UNABLE_TO_GET_ISSUER_CERT_LOCALLY). Restore Claude
     # Code's own default.
     CLAUDE_CODE_CERT_STORE = "bundled,system";
+    # T3 Code product events and T3 Connect relay tracing. Read by the server
+    # and the desktop app (which picks it up from the login shell).
+    T3CODE_TELEMETRY_ENABLED = "false";
   };
 
   home.file = {

@@ -34,7 +34,7 @@ in
       })
     ];
 
-    launchd.agents.nix-config-autoupdate = lib.mkIf pkgs.stdenv.isDarwin {
+    launchd.agents.nix-config-autoupdate = lib.mkIf pkgs.stdenv.hostPlatform.isDarwin {
       enable = true;
       config = {
         ProgramArguments = [ command ];
@@ -46,7 +46,7 @@ in
       };
     };
 
-    systemd.user.services.nix-config-autoupdate = lib.mkIf pkgs.stdenv.isLinux {
+    systemd.user.services.nix-config-autoupdate = lib.mkIf pkgs.stdenv.hostPlatform.isLinux {
       Unit.Description = "Pull nix-config and switch home-manager";
       Service = {
         Type = "oneshot";
@@ -54,7 +54,7 @@ in
         Environment = lib.mapAttrsToList (k: v: "${k}=${v}") env;
       };
     };
-    systemd.user.timers.nix-config-autoupdate = lib.mkIf pkgs.stdenv.isLinux {
+    systemd.user.timers.nix-config-autoupdate = lib.mkIf pkgs.stdenv.hostPlatform.isLinux {
       Unit.Description = "Daily nix-config pull-and-switch";
       Timer = {
         OnCalendar = "*-*-* 10:00:00";
