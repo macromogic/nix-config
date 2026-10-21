@@ -1,0 +1,66 @@
+# Daily: agent CLIs. Mondays (or "all" on a manual run): everything else.
+# Each input moves to its newest commit that is at least 7 days old and
+# still fully served from binary caches; see scripts/update-inputs.py.
+name: Update flake inputs
+
+on:
+  schedule:
+    - cron: "17 6 * * *"
+  workflow_dispatch:
+    inputs:
+      scope:
+        description: Which inputs to update
+        type: choice
+        options: [agents, all]
+        default: agents
+
+permissions:
+  contents: write
+
+concurrency:
+  group: update-inputs
+
+jobs:
+  update:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+
+      - uses: cachix/install-nix-action@13d8dd58da0234aa297dedd986986ccb8e7f3e24 # v31.11.1
+        with:
+          github_access_token: ${{ secrets.GITHUB_TOKEN }}
+          extra_nix_config: |
+            extra-substituters = https://cache.numtide.com
+            extra-trusted-public-keys = niks3.numtide.com-1:DTx8wZduET09hRmMtKdQDxNNthLQETkc/yaX7M4qK0g=
+
+      - name: Choose inputs
+        id: pick
+        env:
+          SCOPE: ${{ inputs.scope }}
+        run: |
+          inputs="llm-agents"
+          if [ "$(date -u +%u)" = 1 ] || [ "$SCOPE" = all ]; then
+            # nixpkgs first: home-manager and nix-index-database follow it.
+            inputs="nixpkgs home-manager nix-index-database bark $inputs"
+          fi
+          echo "inputs=$inputs" >> "$GITHUB_OUTPUT"
+
+      - name: Update
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          INPUTS: ${{ steps.pick.outputs.inputs }}
+        run: |
+          read -ra inputs <<< "$INPUTS"
+          python3 scripts/update-inputs.py "${inputs[@]}" --summary "$RUNNER_TEMP/summary"
+
+      - name: Commit
+        run: |
+          if [ ! -s "$RUNNER_TEMP/summary" ]; then
+            echo "Nothing to update."
+            exit 0
+          fi
+          { echo "Update flake inputs"; echo; cat "$RUNNER_TEMP/summary"; } > "$RUNNER_TEMP/message"
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git commit -F "$RUNNER_TEMP/message" flake.lock
+          git push
