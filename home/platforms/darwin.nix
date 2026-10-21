@@ -8,6 +8,9 @@
     NVM_DIR = "$HOME/.nvm";
   };
 
+  # AeroSpace itself comes from Homebrew; only its config lives here.
+  xdg.configFile."aerospace/aerospace.toml".source = ./../../dotfiles/aerospace.toml;
+
   # Login shells that never read .zshrc still need Homebrew.
   programs.zsh.profileExtra = ''
     eval "$(/opt/homebrew/bin/brew shellenv)"
