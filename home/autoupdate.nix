@@ -52,6 +52,9 @@ in
         Type = "oneshot";
         ExecStart = command;
         Environment = lib.mapAttrsToList (k: v: "${k}=${v}") env;
+        # Some hosts don't let users read their own journal.
+        StandardOutput = "append:%h/.local/state/nix-config-autoupdate.log";
+        StandardError = "append:%h/.local/state/nix-config-autoupdate.log";
       };
     };
     systemd.user.timers.nix-config-autoupdate = lib.mkIf pkgs.stdenv.hostPlatform.isLinux {
