@@ -26,8 +26,9 @@
   outputs = { nixpkgs, home-manager, nix-index-database, ... }@inputs:
     let
       # role is what a machine is for (local | remote); the platform module
-      # follows from system, so hosts never pick it by hand.
-      mkHome = { system, username, role, modules ? [ ] }:
+      # follows from system, so hosts never pick it by hand. repo is where
+      # the host's checkout of this flake lives, relative to $HOME.
+      mkHome = name: { system, username, role, repo, modules ? [ ] }:
         let
           isDarwin = nixpkgs.lib.hasSuffix "darwin" system;
         in
@@ -37,9 +38,11 @@
           modules = [
             nix-index-database.homeModules.nix-index
             ./home/common.nix
+            ./home/autoupdate.nix
             ./home/roles/${role}.nix
             (if isDarwin then ./home/platforms/darwin.nix else ./home/platforms/linux.nix)
             {
+              nixConfig = { inherit name repo; };
               home.username = username;
               home.homeDirectory = (if isDarwin then "/Users/" else "/home/") + username;
             }
@@ -48,24 +51,27 @@
     in
     {
       # Activate with: nix run home-manager -- switch --flake .#<name>
-      homeConfigurations = {
-        "macmo@local" = mkHome {
+      homeConfigurations = builtins.mapAttrs mkHome {
+        "macmo@local" = {
           system = "aarch64-darwin";
           username = "macmo";
           role = "local";
+          repo = "Documents/dev/nix-config";
         };
 
-        "wh25@tdx" = mkHome {
+        "wh25@tdx" = {
           system = "x86_64-linux";
           username = "wh25";
           role = "remote";
+          repo = "nix-config";
         };
 
         # Template for dev servers: copy, rename, adjust system/username.
-        "macmo@remote-template" = mkHome {
+        "macmo@remote-template" = {
           system = "x86_64-linux";
           username = "macmo";
           role = "remote";
+          repo = "nix-config";
         };
       };
     };
