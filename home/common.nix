@@ -66,7 +66,9 @@ in
   home.file = {
     ".tmux.conf".source = ./../dotfiles/tmux.conf;
     ".screenrc".source = ./../dotfiles/screenrc;
-  };
+  } // lib.genAttrs (import ./../agents/targets.nix) (_: {
+    text = builtins.readFile ./../agents/AGENTS.md;
+  });
 
   programs.zsh = {
     enable = true;
