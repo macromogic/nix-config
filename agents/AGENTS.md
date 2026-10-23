@@ -25,6 +25,23 @@ home-manager. Work the Nix way by default:
   ~/.zshrc_secrets. Never print, copy or commit the contents of
   ~/.zshrc_secrets.
 
+## Git
+Whether you may manage git is decided per project. By default you may not.
+
+- Without approval, never commit or push, and don't rewrite or move history:
+  no `git commit`, `push`, `commit --amend`, `rebase`, `merge`, `reset`,
+  `tag`, branch deletion or force-push. Reading git state (`status`, `diff`,
+  `log`, `blame`, `show`) and editing files in the working tree are fine.
+- Approval comes from either:
+  - the project's own AGENTS.md or CLAUDE.md, for example a line saying
+    "Agents may commit" or "Agents may commit and push"; or
+  - my explicit instruction in the current session, which lasts for that
+    session only and covers only what I named (commit is not push).
+- When the work is ready and you have no approval, stop and say so. You can
+  suggest a commit message, but leave committing to me.
+- Even with approval: follow the repository's commit style, never commit
+  secrets, and never force-push or push to a branch I didn't name.
+
 ## Installing software
 - Never install software on your own: no apt, brew, `pip install --user`,
   `npm install -g`, `cargo install`, `nix profile install`,
