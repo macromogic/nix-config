@@ -1,5 +1,6 @@
-# Daily pull-and-switch of this checkout, a few hours after the GitHub job
-# that updates flake.lock (.github/workflows/update-inputs.yml, 06:17 UTC).
+# Daily pull-and-switch of this checkout at 07:00 Indianapolis time, hours
+# after the GitHub job that updates flake.lock
+# (.github/workflows/update-inputs.yml, 06:17 UTC).
 { config, lib, pkgs, ... }:
 
 let
@@ -39,8 +40,9 @@ in
       config = {
         ProgramArguments = [ command ];
         EnvironmentVariables = env;
-        # Runs at the next wake if the Mac was asleep at 10:00.
-        StartCalendarInterval = [{ Hour = 10; Minute = 0; }];
+        # launchd only knows local time; the Mac's zone is Indianapolis.
+        # Runs at the next wake if the Mac was asleep at 07:00.
+        StartCalendarInterval = [{ Hour = 7; Minute = 0; }];
         StandardOutPath = "${config.home.homeDirectory}/Library/Logs/nix-config-autoupdate.log";
         StandardErrorPath = "${config.home.homeDirectory}/Library/Logs/nix-config-autoupdate.log";
       };
@@ -60,7 +62,7 @@ in
     systemd.user.timers.nix-config-autoupdate = lib.mkIf pkgs.stdenv.hostPlatform.isLinux {
       Unit.Description = "Daily nix-config pull-and-switch";
       Timer = {
-        OnCalendar = "*-*-* 10:00:00";
+        OnCalendar = "*-*-* 07:00:00 America/Indiana/Indianapolis";
         Persistent = true;
       };
       Install.WantedBy = [ "timers.target" ];
