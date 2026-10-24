@@ -12,6 +12,11 @@ let
     NIX_CONFIG_REPO = "${config.home.homeDirectory}/${cfg.repo}";
     NIX_CONFIG_NAME = cfg.name;
   };
+  autoupdate = pkgs.writeShellApplication {
+    name = "nix-config-autoupdate";
+    runtimeInputs = with pkgs; [ coreutils curl git ];
+    text = builtins.readFile ./../scripts/autoupdate.sh;
+  };
 in
 {
   options.nixConfig = {
@@ -28,11 +33,14 @@ in
 
   config = lib.mkIf cfg.autoUpdate {
     home.packages = [
-      (pkgs.writeShellApplication {
-        name = "nix-config-autoupdate";
-        runtimeInputs = with pkgs; [ coreutils curl git ];
-        text = builtins.readFile ./../scripts/autoupdate.sh;
-      })
+      autoupdate
+      # The same pull-and-switch by hand: output to the terminal, no Bark ping.
+      (pkgs.writeShellScriptBin "nix-config-update" ''
+        export NIX_CONFIG_REPO=${lib.escapeShellArg env.NIX_CONFIG_REPO}
+        export NIX_CONFIG_NAME=${lib.escapeShellArg env.NIX_CONFIG_NAME}
+        export AUTOUPDATE_NOTIFY=0
+        exec ${lib.getExe autoupdate} "$@"
+      '')
     ];
 
     launchd.agents.nix-config-autoupdate = lib.mkIf pkgs.stdenv.hostPlatform.isDarwin {
