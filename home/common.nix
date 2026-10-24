@@ -6,6 +6,20 @@ let
   omzCustom = pkgs.linkFarm "omz-custom" [
     { name = "plugins/bark"; path = inputs.bark; }
   ];
+
+  agents = inputs.llm-agents.packages.${pkgs.stdenv.hostPlatform.system};
+  # The llm-agents wrapper defaults CLAUDE_CODE_CERT_STORE to `system`, whose
+  # store comes up empty on macOS (UNABLE_TO_GET_ISSUER_CERT_LOCALLY). Restore
+  # Claude Code's own default in the binary itself, so it holds however claude
+  # is started (T3 Code, herdr, launchd), not only from a fresh shell.
+  claude-code = pkgs.symlinkJoin {
+    name = "claude-code-${agents.claude-code.version}";
+    paths = [ agents.claude-code ];
+    nativeBuildInputs = [ pkgs.makeWrapper ];
+    postBuild = ''
+      wrapProgram $out/bin/claude --set-default CLAUDE_CODE_CERT_STORE bundled,system
+    '';
+  };
 in
 {
   home.stateVersion = "25.11";
@@ -35,8 +49,8 @@ in
       runtimeInputs = [ git ];
       text = builtins.readFile ./../scripts/git-setup.sh;
     })
-  ] ++ (with inputs.llm-agents.packages.${pkgs.stdenv.hostPlatform.system}; [
     claude-code
+  ] ++ (with agents; [
     codex
     opencode
     t3code # `t3`: T3 Code server and CLI
@@ -58,10 +72,6 @@ in
     # Versions come from the llm-agents input; a self-update cannot write
     # to the store. (claude-code's wrapper already disables its updater.)
     OPENCODE_DISABLE_AUTOUPDATE = "1";
-    # The llm-agents wrapper defaults this to `system`, whose store comes up
-    # empty on macOS (UNABLE_TO_GET_ISSUER_CERT_LOCALLY). Restore Claude
-    # Code's own default.
-    CLAUDE_CODE_CERT_STORE = "bundled,system";
     # T3 Code product events and T3 Connect relay tracing. Read by the server
     # and the desktop app (which picks it up from the login shell).
     T3CODE_TELEMETRY_ENABLED = "false";
