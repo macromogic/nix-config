@@ -1,6 +1,6 @@
 # macOS-only bits, carried over from the existing ~/.zshrc.
 # Homebrew still owns casks and anything not yet migrated.
-{ lib, ... }:
+{ lib, pkgs, ... }:
 
 {
   home.sessionVariables = {
@@ -10,6 +10,15 @@
 
   # AeroSpace itself comes from Homebrew; only its config lives here.
   xdg.configFile."aerospace/aerospace.toml".source = ./../../dotfiles/aerospace.toml;
+  # Raycast script command listing the AeroSpace keys, regenerated from the
+  # config. Raycast needs ~/.config/raycast/scripts added once under
+  # Settings > Extensions > Script Commands.
+  xdg.configFile."raycast/scripts/aerospace-keys.sh" = {
+    executable = true;
+    source = pkgs.runCommand "aerospace-keys.sh" { nativeBuildInputs = [ pkgs.python3 ]; } ''
+      python3 ${./../../scripts/aerospace-cheatsheet.py} ${./../../dotfiles/aerospace.toml} > $out
+    '';
+  };
 
   # Login shells that never read .zshrc still need Homebrew.
   programs.zsh.profileExtra = ''
