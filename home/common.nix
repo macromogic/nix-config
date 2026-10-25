@@ -20,6 +20,13 @@ let
       wrapProgram $out/bin/claude --set-default CLAUDE_CODE_CERT_STORE bundled,system
     '';
   };
+  # OpenCode 2.x, which T3 Code wants (>= 2.0.18). llm-agents installs it as
+  # `opencode2` to coexist with its 1.x package; we only carry 2.x, so give
+  # it upstream's name back. 2.x converts the 1.x database in place.
+  opencode = pkgs.runCommand "opencode-${agents.opencode2.version}" { } ''
+    mkdir -p $out/bin
+    ln -s ${agents.opencode2}/bin/opencode2 $out/bin/opencode
+  '';
 in
 {
   home.stateVersion = "25.11";
@@ -50,9 +57,9 @@ in
       text = builtins.readFile ./../scripts/git-setup.sh;
     })
     claude-code
+    opencode
   ] ++ (with agents; [
     codex
-    opencode
     t3code # `t3`: T3 Code server and CLI
   ]);
 
