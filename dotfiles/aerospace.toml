@@ -9,7 +9,7 @@ enable-normalization-flatten-containers = true
 enable-normalization-opposite-orientation-for-nested-containers = true
 
 accordion-padding = 30
-default-root-container-layout = 'tiles'
+default-root-container-layout = 'accordion'
 default-root-container-orientation = 'auto'
 
 on-focused-monitor-changed = ['move-mouse monitor-lazy-center']
@@ -80,15 +80,12 @@ alt-shift-9 = 'move-node-to-workspace 9'
 alt-tab = 'workspace-back-and-forth'
 alt-shift-tab = 'move-workspace-to-monitor --wrap-around next'
 
-# Monitors: ctrl-alt moves the current workspace, ctrl-alt-shift moves focus.
+# Monitors: ctrl-alt moves the current workspace; focusing a monitor is in
+# service mode, to avoid a three-modifier chord.
 ctrl-alt-h = 'move-workspace-to-monitor left'
 ctrl-alt-j = 'move-workspace-to-monitor down'
 ctrl-alt-k = 'move-workspace-to-monitor up'
 ctrl-alt-l = 'move-workspace-to-monitor right'
-ctrl-alt-shift-h = 'focus-monitor left'
-ctrl-alt-shift-j = 'focus-monitor down'
-ctrl-alt-shift-k = 'focus-monitor up'
-ctrl-alt-shift-l = 'focus-monitor right'
 
 alt-shift-semicolon = 'mode service'
 
@@ -97,10 +94,14 @@ esc = ['reload-config', 'mode main']
 r = ['flatten-workspace-tree', 'mode main'] # reset layout
 f = ['layout floating tiling', 'mode main'] # toggle floating/tiling
 backspace = ['close-all-windows-but-current', 'mode main']
-alt-shift-h = ['join-with left', 'mode main']
-alt-shift-j = ['join-with down', 'mode main']
-alt-shift-k = ['join-with up', 'mode main']
-alt-shift-l = ['join-with right', 'mode main']
+h = ['focus-monitor left', 'mode main']
+j = ['focus-monitor down', 'mode main']
+k = ['focus-monitor up', 'mode main']
+l = ['focus-monitor right', 'mode main']
+shift-h = ['join-with left', 'mode main']
+shift-j = ['join-with down', 'mode main']
+shift-k = ['join-with up', 'mode main']
+shift-l = ['join-with right', 'mode main']
 
 # Float apps that don't tile well.
 [[on-window-detected]]
