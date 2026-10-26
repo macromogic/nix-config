@@ -2,6 +2,8 @@
 { lib, ... }:
 
 {
+  imports = [ ./../tailscale-userspace.nix ];
+
   home.file = {
     # Classic (filled) prompt, so a remote shell is obvious at a glance.
     ".p10k.zsh".source = ./../../dotfiles/p10k-remote.zsh;
