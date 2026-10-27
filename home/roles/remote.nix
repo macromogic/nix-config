@@ -2,6 +2,8 @@
 { ... }:
 
 {
+  imports = [ ./../t3-server.nix ];
+
   # Classic (filled) prompt, so a remote shell is obvious at a glance.
   home.file.".p10k.zsh".source = ./../../dotfiles/p10k-remote.zsh;
 
