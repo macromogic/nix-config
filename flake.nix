@@ -39,6 +39,7 @@
             nix-index-database.homeModules.nix-index
             ./home/common.nix
             ./home/autoupdate.nix
+            ./home/clones.nix
             ./home/roles/${role}.nix
             (if isDarwin then ./home/platforms/darwin.nix else ./home/platforms/linux.nix)
             {
@@ -57,6 +58,8 @@
           username = "macmo";
           role = "local";
           repo = "Documents/dev/nix-config";
+          # Existing checkout, kept where it already was.
+          modules = [{ nixConfig.clones.ytcc.path = "Documents/dev/ytcc"; }];
         };
 
         "wh25@tdx" = {

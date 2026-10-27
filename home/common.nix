@@ -136,14 +136,6 @@ in
     ];
   };
 
-  # LazyVim writes lazy-lock.json into its config dir, so it stays a
-  # mutable git checkout rather than a read-only store path.
-  home.activation.lazyvim = lib.hm.dag.entryAfter [ "writeBoundary" ] ''
-    if [ ! -d "$HOME/.config/nvim" ]; then
-      run ${pkgs.git}/bin/git clone https://github.com/macromogic/lazyvim.git "$HOME/.config/nvim"
-    fi
-  '';
-
   # Leftover installer copies in ~/.local/bin win over the Nix ones on PATH
   # (that dir must stay first for host toolchains), so point them out.
   home.activation.agentCliLeftovers = lib.hm.dag.entryAfter [ "writeBoundary" ] ''
@@ -153,16 +145,5 @@ in
         echo "agent CLIs: leftover installer copy may shadow the Nix one: $f"
       fi
     done
-  '';
-
-  # Nora updates itself with `nora update` (git pull), so it is also a
-  # mutable checkout. install-skills is idempotent; it fails only when no
-  # agent is installed yet, which must not abort activation.
-  home.activation.nora = lib.hm.dag.entryAfter [ "writeBoundary" ] ''
-    if [ ! -d "$HOME/nora" ]; then
-      run ${pkgs.git}/bin/git clone https://github.com/macromogic/nora.git "$HOME/nora"
-    fi
-    run ${pkgs.python3}/bin/python3 "$HOME/nora/bin/nora" install-skills \
-      || echo "nora: no ~/.claude or ~/.codex yet; rerun 'nora install-skills' later"
   '';
 }
