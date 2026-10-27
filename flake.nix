@@ -64,6 +64,7 @@
           username = "wh25";
           role = "remote";
           repo = "nix-config";
+          modules = [ ./home/shared-server.nix ];
         };
 
         # Dev servers: one config per username, shared by every server
@@ -73,6 +74,7 @@
           username = "wh25";
           role = "remote";
           repo = "nix-config";
+          modules = [ ./home/shared-server.nix ];
         };
 
         "macmo@remote" = {
@@ -80,6 +82,16 @@
           username = "macmo";
           role = "remote";
           repo = "nix-config";
+          modules = [ ./home/shared-server.nix ];
+        };
+
+        # Windows desktop, WSL2 Ubuntu; mine alone, so not a shared server.
+        "macmo@pc" = {
+          system = "x86_64-linux";
+          username = "macmo";
+          role = "remote";
+          repo = "nix-config";
+          modules = [ ./home/hosts/pc.nix ];
         };
       };
     };
