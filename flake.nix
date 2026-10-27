@@ -66,8 +66,16 @@
           repo = "nix-config";
         };
 
-        # Template for dev servers: copy, rename, adjust system/username.
-        "macmo@remote-template" = {
+        # Dev servers: one config per username, shared by every server
+        # that user has an account on.
+        "wh25@remote" = {
+          system = "x86_64-linux";
+          username = "wh25";
+          role = "remote";
+          repo = "nix-config";
+        };
+
+        "macmo@remote" = {
           system = "x86_64-linux";
           username = "macmo";
           role = "remote";
