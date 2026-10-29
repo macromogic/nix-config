@@ -2,8 +2,9 @@
 # to it, then fast-forward its other checkouts (home/clones.nix). Run daily
 # by a launchd agent / systemd user timer (autoupdate.nix).
 # Skips when the checkout has uncommitted changes or unpushed commits; on a
-# failed switch, resets the checkout so the next run retries, and notifies
-# via Bark when BARK_KEY is set in ~/.zshrc_secrets.
+# failed switch, resets the checkout so the next run retries. Notifies via
+# Bark, when BARK_KEY is set in ~/.zshrc_secrets, on a failed switch or a
+# failed checkout hook.
 
 repo=${NIX_CONFIG_REPO:?} name=${NIX_CONFIG_NAME:?}
 # Timers start with a bare PATH; home-manager and nix live outside it.
@@ -70,5 +71,9 @@ set +e
 status=$?
 set -e
 # After the switch, so a new manifest or tool is already in place.
-nix-config-clones pull || log "clones: pull failed"
+clones=$(nix-config-clones pull 2>&1) || clones+=$'\n'$(log "clones: pull failed")
+printf '%s\n' "$clones"
+if failed=$(grep -E 'clones: .*(hook|pull) failed' <<<"$clones"); then
+  notify "nix-config clones failed on $(hostname -s)" "$failed"
+fi
 exit "$status"

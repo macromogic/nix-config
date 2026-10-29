@@ -1,6 +1,6 @@
 # Daily pull-and-switch of this checkout at 07:00 Indianapolis time, hours
 # after the GitHub job that updates flake.lock
-# (.github/workflows/update-inputs.yml, 06:17 UTC).
+# (.github/workflows/update-inputs.yml, 02:17 UTC).
 { config, lib, pkgs, ... }:
 
 let

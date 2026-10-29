@@ -69,14 +69,32 @@ in
 
   config = {
     nixConfig.clones = {
-      # LazyVim config. Plugins follow the committed lazy-lock.json, so
-      # update plugins on one machine and commit the lock from there.
+      # LazyVim config. Plugins follow the committed lazy-lock.json, which
+      # only the lazyvim repo's weekly CI job updates; machines never run
+      # `:Lazy update` themselves. On startup lazy installs missing plugins
+      # and rewrites the lock from what is installed, before the restore
+      # reads it; so restore again from the committed lock. A lock still
+      # dirty after that means a plugin couldn't be checked out.
       nvim = {
         path = ".config/nvim";
         url = "https://github.com/macromogic/lazyvim.git";
         hook = ''
-          if [ -n "$OLD" ] && ! ${pkgs.git}/bin/git diff --quiet "$OLD" "$NEW" -- lazy-lock.json; then
-            ${pkgs.coreutils}/bin/timeout 600 ${pkgs.neovim}/bin/nvim --headless "+Lazy! restore" +qa
+          git=${pkgs.git}/bin/git
+          if [ -n "$OLD" ] && ! $git diff --quiet "$OLD" "$NEW" -- lazy-lock.json; then
+            log=$HOME/.local/state/nix-config-nvim-restore.log
+            ${pkgs.coreutils}/bin/mkdir -p "''${log%/*}"
+            : >"$log"
+            restore() {
+              ${pkgs.coreutils}/bin/timeout 600 ${pkgs.neovim}/bin/nvim --headless "+Lazy! restore" +qa >>"$log" 2>&1
+            }
+            restore
+            $git checkout -- lazy-lock.json
+            restore
+            if ! $git diff --quiet -- lazy-lock.json; then
+              $git checkout -- lazy-lock.json
+              echo "nvim: plugins don't match lazy-lock.json after restore; see $log" >&2
+              exit 1
+            fi
           fi
         '';
       };
