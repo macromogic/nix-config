@@ -10,7 +10,8 @@
 #
 # Updates never restart it, so a daily switch can't kill running agents:
 # the unit runs t3 from the profile and keeps the old process on switch.
-# Pick up a new t3 with `systemctl --user restart t3-server`.
+# Pick up a new t3 with `systemctl --user restart t3-server`; the daily
+# update sends a Bark notice when one is waiting (scripts/autoupdate.sh).
 { lib, pkgs, ... }:
 
 lib.mkIf pkgs.stdenv.hostPlatform.isLinux {

@@ -24,6 +24,20 @@ notify() {
     --data-urlencode "group=nix-config" "${server%/}/$key" >/dev/null || true
 }
 
+# A switch never restarts t3-server (t3-server.nix), so after one it may
+# still run the previous t3. The installed t3 (common.nix) keeps the server
+# code in its own output, so the running process names that output's path
+# exactly when it is current.
+t3_server_outdated() {
+  local pid installed running
+  pid=$(systemctl --user show -p MainPID --value t3-server 2>/dev/null) || return 1
+  [[ $pid =~ ^[1-9][0-9]*$ ]] || return 1
+  installed=$(readlink -f "$HOME/.nix-profile/bin/t3") || return 1
+  installed=${installed%/bin/t3}/
+  running=$(tr '\0' ' ' <"/proc/$pid/cmdline") || return 1
+  [[ $running != *"$installed"* ]]
+}
+
 update_nix_config() {
   cd "$repo"
   branch=$(git symbolic-ref --short HEAD)
@@ -56,6 +70,11 @@ update_nix_config() {
   git update-ref refs/remotes/origin/main "$target"
   if home-manager switch --flake ".#$name"; then
     log "switched ${before:0:7} -> ${target:0:7}"
+    if t3_server_outdated; then
+      log "t3-server still runs the previous t3; restart it to update"
+      notify "T3 update waiting on $(hostname -s)" \
+        "A new t3 is installed. Restart when no agent is running: systemctl --user restart t3-server"
+    fi
   else
     git reset --quiet --keep "$before"
     log "switch to ${target:0:7} failed; checkout reset to ${before:0:7}"

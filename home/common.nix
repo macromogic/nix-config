@@ -27,6 +27,37 @@ let
     mkdir -p $out/bin
     ln -s ${agents.opencode2}/bin/opencode2 $out/bin/opencode
   '';
+  # T3 Code with paired sessions lasting two years instead of 30 days. Sessions
+  # never renew, so each client would otherwise be re-paired with every
+  # server monthly; the servers are reachable on the tailnet only, and a lost
+  # device is revoked with `t3 auth session revoke`. The constant sits in a
+  # bundle whose name changes per release, so the build fails if it moves
+  # rather than quietly going back to 30 days. dist is copied, not linked:
+  # node resolves symlinked modules to their target and would load the
+  # original bundle. Wrapped as llm-agents wraps it, with its own node.
+  t3code =
+    let
+      unwrapped = agents.t3code.unwrapped;
+      node = inputs.llm-agents.inputs.nixpkgs.legacyPackages.${pkgs.stdenv.hostPlatform.system}.nodejs_24;
+    in
+    pkgs.runCommand "t3code-${unwrapped.version}" { nativeBuildInputs = [ pkgs.makeBinaryWrapper ]; } ''
+      src=${unwrapped}/libexec/t3code/apps/server
+      dst=$out/libexec/t3code/apps/server
+      mkdir -p $dst
+      for f in $src/*; do
+        [ "$(basename "$f")" = dist ] || ln -s "$f" $dst/
+      done
+      cp -r $src/dist $dst/dist
+      chmod -R u+w $dst/dist
+      old='const DEFAULT_SESSION_TTL = days(30);'
+      bundle=$(grep -lF "$old" $dst/dist/*.mjs)
+      [ "$(echo "$bundle" | wc -l)" -eq 1 ] || { echo "t3code: session TTL constant not found exactly once" >&2; exit 1; }
+      substituteInPlace "$bundle" --replace-fail "$old" 'const DEFAULT_SESSION_TTL = days(730);'
+      makeWrapper ${lib.getExe node} $out/bin/t3 \
+        --add-flags $dst/dist/bin.mjs \
+        --prefix PATH : ${lib.makeBinPath agents.t3code.providerPackages}
+      ln -s ${unwrapped}/share $out/share
+    '';
 in
 {
   home.stateVersion = "25.11";
@@ -58,9 +89,14 @@ in
     })
     claude-code
     opencode
+    t3code # `t3`: T3 Code server and CLI
+    (writeShellApplication {
+      name = "t3-pair";
+      runtimeInputs = [ t3code jq ];
+      text = builtins.readFile ./../scripts/t3-pair.sh;
+    })
   ] ++ (with agents; [
     codex
-    t3code # `t3`: T3 Code server and CLI
   ]);
 
   # `, <cmd>` runs a command from nixpkgs without installing it. Also gives
