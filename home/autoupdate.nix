@@ -14,7 +14,7 @@ let
   };
   autoupdate = pkgs.writeShellApplication {
     name = "nix-config-autoupdate";
-    runtimeInputs = with pkgs; [ coreutils curl git ];
+    runtimeInputs = with pkgs; [ coreutils curl git jq ];
     text = builtins.readFile ./../scripts/autoupdate.sh;
   };
 in
@@ -34,7 +34,7 @@ in
   config = lib.mkIf cfg.autoUpdate {
     home.packages = [
       autoupdate
-      # The same pull-and-switch by hand: output to the terminal, no Bark ping.
+      # The same pull-and-switch by hand: output to the terminal, no Discord post.
       (pkgs.writeShellScriptBin "nix-config-update" ''
         export NIX_CONFIG_REPO=${lib.escapeShellArg env.NIX_CONFIG_REPO}
         export NIX_CONFIG_NAME=${lib.escapeShellArg env.NIX_CONFIG_NAME}

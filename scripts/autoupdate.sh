@@ -2,9 +2,9 @@
 # to it, then fast-forward its other checkouts (home/clones.nix). Run daily
 # by a launchd agent / systemd user timer (autoupdate.nix).
 # Skips when the checkout has uncommitted changes or unpushed commits; on a
-# failed switch, resets the checkout so the next run retries. Notifies via
-# Bark, when BARK_KEY is set in ~/.zshrc_secrets, on a failed switch or a
-# failed checkout hook.
+# failed switch, resets the checkout so the next run retries. Posts to
+# Discord, when DISCORD_WEBHOOK_NIX_CONFIG is set in ~/.zshrc_secrets, on a
+# failed switch, a failed checkout hook or a t3-server left on an old t3.
 
 repo=${NIX_CONFIG_REPO:?} name=${NIX_CONFIG_NAME:?}
 # Timers start with a bare PATH; home-manager and nix live outside it.
@@ -13,15 +13,21 @@ export PATH="$PATH:$HOME/.nix-profile/bin:/nix/var/nix/profiles/default/bin:/usr
 log() { printf '%s %s\n' "$(date '+%F %T')" "$*"; }
 
 notify() {
-  [[ ${AUTOUPDATE_NOTIFY:-1} == 1 && -f $HOME/.zshrc_secrets ]] || return 0
-  local settings key server
-  # shellcheck source=/dev/null
-  settings=$(. "$HOME/.zshrc_secrets" >/dev/null 2>&1
-    printf '%s\n%s' "${BARK_KEY:-}" "${BARK_SERVER:-https://api.day.app}")
-  key=${settings%%$'\n'*} server=${settings#*$'\n'}
-  [[ -n $key ]] || return 0
-  curl -fsS -G --data-urlencode "title=$1" --data-urlencode "body=$2" \
-    --data-urlencode "group=nix-config" "${server%/}/$key" >/dev/null || true
+  [[ ${AUTOUPDATE_NOTIFY:-1} == 1 ]] || return 0
+  local webhook=
+  if [[ -f $HOME/.zshrc_secrets ]]; then
+    # shellcheck source=/dev/null
+    webhook=$(. "$HOME/.zshrc_secrets" >/dev/null 2>&1
+      printf '%s' "${DISCORD_WEBHOOK_NIX_CONFIG:-}")
+  fi
+  if [[ -z $webhook ]]; then
+    log "DISCORD_WEBHOOK_NIX_CONFIG not set; not sent: $1"
+    return 0
+  fi
+  # Discord rejects messages over 2000 characters.
+  jq -n --arg title "$1" --arg body "$2" '{content: ("**\($title)**\n\($body)")[:2000]}' |
+    curl -fsS -H 'Content-Type: application/json' --data-binary @- "$webhook" >/dev/null ||
+    log "Discord notification failed: $1"
 }
 
 # A switch never restarts t3-server (t3-server.nix), so after one it may
