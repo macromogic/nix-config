@@ -112,9 +112,22 @@ run = 'layout floating'
 if.app-id = 'com.apple.finder'
 run = 'layout floating'
 
+# Zoom: tile the main and meeting windows, float its popups (share toolbar,
+# chat, participants). The tiling rule must come first. Titles depend on the
+# Zoom version and UI language.
+[[on-window-detected]]
+if.app-id = 'us.zoom.xos'
+if.window-title-regex-substring = '^Zoom (Meeting|Webinar|Workplace)$'
+run = 'layout tiling'
+
 [[on-window-detected]]
 if.app-id = 'us.zoom.xos'
 run = 'layout floating'
+
+# Discord's main window is sometimes detected as a dialog and floated.
+[[on-window-detected]]
+if.app-id = 'com.hnc.Discord'
+run = 'layout tiling'
 
 [[on-window-detected]]
 if.app-id = 'cx.c3.theunarchiver'
