@@ -9,7 +9,16 @@
   };
 
   # AeroSpace itself comes from Homebrew; only its config lives here.
-  xdg.configFile."aerospace/aerospace.toml".source = ./../../dotfiles/aerospace.toml;
+  # auto-reload-config misses home-manager's symlink swap, so a switch would
+  # leave the running server on the old config; reload it here instead.
+  xdg.configFile."aerospace/aerospace.toml" = {
+    source = ./../../dotfiles/aerospace.toml;
+    onChange = ''
+      if [ -x /opt/homebrew/bin/aerospace ]; then
+        run /opt/homebrew/bin/aerospace reload-config || true
+      fi
+    '';
+  };
   # Raycast script command listing the AeroSpace keys, regenerated from the
   # config. Raycast needs ~/.config/raycast/scripts added once under
   # Settings > Extensions > Script Commands.
