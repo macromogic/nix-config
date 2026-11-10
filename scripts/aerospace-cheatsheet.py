@@ -6,8 +6,14 @@ Usage: aerospace-cheatsheet.py aerospace.toml > aerospace-keys.sh
 Run at build time by home/platforms/darwin.nix, so the cheatsheet always
 matches the config. Raycast shows the script's output as plain text. Bindings that differ only in a direction or workspace
 number (alt-h/j/k/l, alt-1..9) are folded into one row.
+
+The workspace list comes from a comment block in the config ("#   <n>  role
+apps" lines), since AeroSpace rejects unknown keys; monitor pins come from
+[workspace-to-monitor-force-assignment]. The build fails if a rule targets a
+workspace the comment block doesn't describe.
 """
 
+import re
 import sys
 import tomllib
 
@@ -44,6 +50,9 @@ COMMANDS = {
     "exec-and-forget ~/.config/aerospace/regroup": ("Service mode", "Put windows back in their workspaces"),
     "enable toggle": ("Service mode", "Turn window management off / on"),
 }
+MONITORS = {"built-in": "laptop", "main": "main", "secondary": "secondary"}
+# "#   1  code              T3 Code, iTerm": number, role, then apps after 2+ spaces.
+WORKSPACE_LINE = re.compile(r"^#   (\d+)  (\S.*?)(?:\s{2,}(\S.*))?$")
 SECTIONS = ["Windows", "Layout", "Workspaces", "Monitors", "Modes", "Service mode", "Other"]
 
 
@@ -85,7 +94,49 @@ def rows(bindings, default_section):
         yield section, mods, fold_keys(bases), label
 
 
-def render(config):
+def targeted_workspaces(config):
+    """Workspaces the config sends windows to, pins, or has rules for."""
+    found = set(config.get("workspace-to-monitor-force-assignment", {}))
+    for rule in config.get("on-window-detected", []):
+        if "workspace" in rule.get("if", {}):
+            found.add(rule["if"]["workspace"])
+        run = rule.get("run", [])
+        for command in [run] if isinstance(run, str) else run:
+            if command.startswith("move-node-to-workspace "):
+                found.add(command.split()[-1])
+    return found
+
+
+def workspace_section(config, text):
+    described = {}
+    for line in text.splitlines():
+        if m := WORKSPACE_LINE.match(line):
+            described[m[1]] = (m[2], m[3] or "")
+    missing = sorted(targeted_workspaces(config) - described.keys())
+    if missing:
+        sys.exit(f"aerospace-cheatsheet: workspaces {', '.join(missing)} have rules but no "
+                 "'#   <n>  role  apps' line in the config")
+
+    pins = config.get("workspace-to-monitor-force-assignment", {})
+
+    def monitor(ws):
+        patterns = pins.get(ws, [])
+        patterns = [patterns] if isinstance(patterns, str) else patterns
+        return " → ".join(MONITORS.get(str(p), str(p)) for p in patterns)
+
+    role_width = max(len(role) for role, _ in described.values()) + 3
+    monitor_width = max(len(monitor(ws)) for ws in described) + 3
+    out = ["WORKSPACE ROLES"]
+    for ws, (role, apps) in described.items():
+        out.append(f"  {ws}  {role:<{role_width}}{monitor(ws):<{monitor_width}}{apps}".rstrip())
+    if pins:
+        out.append("  a → b: on a, or on b when a is absent (laptop lid closed).")
+    out.append("  Others stay where last shown; ⌃⌥ <n> pulls one to this monitor.")
+    out.append("")
+    return out
+
+
+def render(config, text):
     modes = config.get("mode", {})
     by_section = {s: [] for s in SECTIONS}
     for section, mods, keys, label in rows(modes.get("main", {}).get("binding", {}), None):
@@ -94,7 +145,7 @@ def render(config):
         by_section[section].append((mods, keys, label))
 
     width = max(len(f"{m} {k}") for rs in by_section.values() for m, k, _ in rs) + 3
-    out = []
+    out = workspace_section(config, text)
     for section in SECTIONS:
         if not by_section[section]:
             continue
@@ -123,5 +174,6 @@ cat <<'CHEATSHEET'
 
 
 if __name__ == "__main__":
-    with open(sys.argv[1], "rb") as f:
-        sys.stdout.write(raycast_script(render(tomllib.load(f))))
+    with open(sys.argv[1], encoding="utf-8") as f:
+        text = f.read()
+    sys.stdout.write(raycast_script(render(tomllib.loads(text), text)))

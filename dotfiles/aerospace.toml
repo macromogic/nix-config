@@ -105,9 +105,18 @@ shift-l = ['join-with right', 'mode main']
 g = ['exec-and-forget ~/.config/aerospace/regroup', 'mode main'] # regroup windows
 e = ['enable toggle', 'mode main'] # stop or resume managing windows
 
-# Each workspace has a fixed meaning, and the rules below send apps to it:
-#   1 code     2 browser   3 writing   4 research
-#   5 chat     6 mail and schedule     7 free     8 hands off     9 music
+# Each workspace has a fixed meaning, and the rules below send apps to it.
+# scripts/aerospace-cheatsheet.py reads this list (keep the "#   <n>  " shape)
+# and fails the build if a rule targets a workspace missing from it.
+#   1  code              T3 Code, iTerm, VS Code
+#   2  browser           Dia, Edge
+#   3  writing           Word, PowerPoint, Excel, Typora
+#   4  research          Zotero, Obsidian, Notion, Preview
+#   5  chat              WeChat, Lark, Discord, Slack, QQ, Messages
+#   6  mail, schedule    Outlook, Calendar, Reminders, TickTick, Mail, Spark
+#   7  free
+#   8  hands off         anything opened here floats and stays
+#   9  music             Spotify
 # Apps without a rule open tiled on the current workspace.
 # Chat, mail and music stay on the laptop screen, whatever external monitor
 # is attached, or on the main monitor when the lid is closed. The rest stay
