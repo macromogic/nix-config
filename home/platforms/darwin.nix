@@ -19,6 +19,11 @@
       fi
     '';
   };
+  # Re-applies the config's app rules to open windows; bound to g in service
+  # mode, which runs it as ~/.config/aerospace/regroup.
+  xdg.configFile."aerospace/regroup".source = pkgs.writeScript "aerospace-regroup" (
+    "#!${pkgs.python3}/bin/python3 -I\n" + builtins.readFile ./../../scripts/aerospace-regroup.py
+  );
   # Raycast script command listing the AeroSpace keys, regenerated from the
   # config. Raycast needs ~/.config/raycast/scripts added once under
   # Settings > Extensions > Script Commands.

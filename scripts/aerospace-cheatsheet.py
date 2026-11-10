@@ -41,6 +41,8 @@ COMMANDS = {
     "layout floating tiling": ("Service mode", "Toggle floating / tiling"),
     "close-all-windows-but-current": ("Service mode", "Close all other windows"),
     "join-with": ("Service mode", "Join with neighbour"),
+    "exec-and-forget ~/.config/aerospace/regroup": ("Service mode", "Put windows back in their workspaces"),
+    "enable toggle": ("Service mode", "Turn window management off / on"),
 }
 SECTIONS = ["Windows", "Layout", "Workspaces", "Monitors", "Modes", "Service mode", "Other"]
 

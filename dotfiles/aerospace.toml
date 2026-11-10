@@ -102,19 +102,81 @@ shift-h = ['join-with left', 'mode main']
 shift-j = ['join-with down', 'mode main']
 shift-k = ['join-with up', 'mode main']
 shift-l = ['join-with right', 'mode main']
+g = ['exec-and-forget ~/.config/aerospace/regroup', 'mode main'] # regroup windows
+e = ['enable toggle', 'mode main'] # stop or resume managing windows
 
-# Float apps that don't tile well.
+# Each workspace has a fixed meaning, and the rules below send apps to it:
+#   1 code     2 browser   3 writing   4 research
+#   5 chat     6 mail and schedule     7 free     8 hands off     9 music
+# Apps without a rule open tiled on the current workspace.
+# Chat, mail and music stay on the laptop screen, whatever external monitor
+# is attached, or on the main monitor when the lid is closed. The rest stay
+# on the monitor they were last shown on; ctrl-alt-<n> pulls one to the
+# focused monitor.
+[workspace-to-monitor-force-assignment]
+5 = ['built-in', 'main']
+6 = ['built-in', 'main']
+9 = ['built-in', 'main']
+
+# Rules only apply to windows as they open; service mode g re-applies them to
+# open windows (scripts/aerospace-regroup.py). The first matching rule wins,
+# so specific rules must come before broader ones for the same app.
+
+# 8 is hands off: anything opened there floats and stays there, even apps
+# that belong elsewhere. Open games or apps that fight tiling from 8. To stop
+# managing windows altogether, service mode e turns AeroSpace off and on.
+[[on-window-detected]]
+if.workspace = '8'
+run = 'layout floating'
+
+# Utilities, popups and games float.
 [[on-window-detected]]
 if.app-id = 'com.apple.systempreferences'
 run = 'layout floating'
 
 [[on-window-detected]]
-if.app-id = 'com.apple.finder'
+if.app-id = 'cx.c3.theunarchiver'
+run = 'layout floating'
+
+[[on-window-detected]]
+if.app-id = 'com.depthpicture.PixPin'
+run = 'layout floating'
+
+[[on-window-detected]]
+if.app-id = 'eu.exelban.Stats'
+run = 'layout floating'
+
+[[on-window-detected]]
+if.app-id = 'com.crystalidea.macsfancontrol'
+run = 'layout floating'
+
+[[on-window-detected]]
+if.app-id = 'org.localsend.localsendApp'
+run = 'layout floating'
+
+[[on-window-detected]]
+if.app-id = 'com.netease.uuremote'
+run = 'layout floating'
+
+# iPhone Mirroring.
+[[on-window-detected]]
+if.app-id = 'com.apple.ScreenContinuity'
+run = 'layout floating'
+
+# Xiaohongshu, an iPad app with a fixed window size.
+[[on-window-detected]]
+if.app-id = 'com.xingin.discover'
+run = 'layout floating'
+
+# Steam (native and CrossOver) and games. Games often have no bundle ID, so
+# match names; check `aerospace list-apps` if a game still tiles.
+[[on-window-detected]]
+if.app-name-regex-substring = '^(Steam|Don.t Starve Together|Muse Dash|Rhythm Doctor)$'
 run = 'layout floating'
 
 # Zoom: tile the main and meeting windows, float its popups (share toolbar,
 # chat, participants). The tiling rule must come first. Titles depend on the
-# Zoom version and UI language.
+# Zoom version and UI language. Meetings stay on whichever workspace is open.
 [[on-window-detected]]
 if.app-id = 'us.zoom.xos'
 if.window-title-regex-substring = '^Zoom (Meeting|Webinar|Workplace)$'
@@ -124,11 +186,118 @@ run = 'layout tiling'
 if.app-id = 'us.zoom.xos'
 run = 'layout floating'
 
+# AeroSpace takes some main windows for dialogs and floats them; those apps
+# get 'layout tiling' as well. If one of their real dialogs then tiles, add a
+# floating rule for its title above.
+
+# 1 code
+[[on-window-detected]]
+if.app-id = 'com.t3tools.t3code'
+run = 'move-node-to-workspace 1'
+
+[[on-window-detected]]
+if.app-id = 'com.googlecode.iterm2'
+run = ['layout tiling', 'move-node-to-workspace 1']
+
+[[on-window-detected]]
+if.app-id = 'com.microsoft.VSCode'
+run = 'move-node-to-workspace 1'
+
+# 2 browser
+[[on-window-detected]]
+if.app-id = 'company.thebrowser.dia'
+run = ['layout tiling', 'move-node-to-workspace 2']
+
+[[on-window-detected]]
+if.app-id = 'com.microsoft.edgemac'
+run = 'move-node-to-workspace 2'
+
+# 3 writing
+[[on-window-detected]]
+if.app-id = 'com.microsoft.Word'
+run = ['layout tiling', 'move-node-to-workspace 3']
+
+[[on-window-detected]]
+if.app-id = 'com.microsoft.Powerpoint'
+run = 'move-node-to-workspace 3'
+
+[[on-window-detected]]
+if.app-id = 'com.microsoft.Excel'
+run = 'move-node-to-workspace 3'
+
+[[on-window-detected]]
+if.app-id = 'abnerworks.Typora'
+run = 'move-node-to-workspace 3'
+
+# 4 research
+[[on-window-detected]]
+if.app-id = 'org.zotero.zotero-beta'
+run = 'move-node-to-workspace 4'
+
+[[on-window-detected]]
+if.app-id = 'md.obsidian'
+run = 'move-node-to-workspace 4'
+
+[[on-window-detected]]
+if.app-id = 'notion.id'
+run = 'move-node-to-workspace 4'
+
+[[on-window-detected]]
+if.app-id = 'com.apple.Preview'
+run = 'move-node-to-workspace 4'
+
+# 5 chat
+[[on-window-detected]]
+if.app-id = 'com.tencent.xinWeChat'
+run = 'move-node-to-workspace 5'
+
+[[on-window-detected]]
+if.app-id = 'com.electron.lark'
+run = 'move-node-to-workspace 5'
+
 # Discord's main window is sometimes detected as a dialog and floated.
 [[on-window-detected]]
 if.app-id = 'com.hnc.Discord'
-run = 'layout tiling'
+run = ['layout tiling', 'move-node-to-workspace 5']
 
 [[on-window-detected]]
-if.app-id = 'cx.c3.theunarchiver'
-run = 'layout floating'
+if.app-id = 'com.tinyspeck.slackmacgap'
+run = 'move-node-to-workspace 5'
+
+[[on-window-detected]]
+if.app-id = 'com.tencent.qq'
+run = 'move-node-to-workspace 5'
+
+[[on-window-detected]]
+if.app-id = 'com.apple.MobileSMS'
+run = 'move-node-to-workspace 5'
+
+# 6 mail and schedule
+[[on-window-detected]]
+if.app-id = 'com.microsoft.Outlook'
+run = 'move-node-to-workspace 6'
+
+[[on-window-detected]]
+if.app-id = 'com.apple.iCal'
+run = 'move-node-to-workspace 6'
+
+[[on-window-detected]]
+if.app-id = 'com.apple.reminders'
+run = 'move-node-to-workspace 6'
+
+[[on-window-detected]]
+if.app-id = 'com.TickTick.task.mac'
+run = 'move-node-to-workspace 6'
+
+[[on-window-detected]]
+if.app-id = 'com.apple.mail'
+run = 'move-node-to-workspace 6'
+
+[[on-window-detected]]
+if.app-id = 'com.readdle.SparkDesktop.appstore'
+run = 'move-node-to-workspace 6'
+
+# 9 music
+[[on-window-detected]]
+if.app-id = 'com.spotify.client'
+run = 'move-node-to-workspace 9'
