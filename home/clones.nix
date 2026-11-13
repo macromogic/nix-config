@@ -123,9 +123,10 @@ in
       ++ lib.optionals (enabled ? ytcc) [
       pkgs.ffmpeg-headless
       # Runs ytcc from its checkout in any directory; uv syncs its venv.
-      # The venv lives in the cache, not the checkout: iCloud flags files
-      # under dot-folders in ~/Documents as hidden, and Python >= 3.13
-      # skips hidden .pth files, which breaks the editable install.
+      # The venv lives in the cache, not the checkout: a checkout under an
+      # iCloud-synced folder (~/Documents) gets its dot-folders flagged
+      # hidden, and Python >= 3.13 skips hidden .pth files, which breaks
+      # the editable install.
       (pkgs.writeShellScriptBin "ytcc" ''
         export UV_PROJECT_ENVIRONMENT="''${XDG_CACHE_HOME:-$HOME/.cache}/ytcc/venv"
         exec ${pkgs.uv}/bin/uv run --quiet --project "$HOME/${cfg.ytcc.path}" ytcc "$@"

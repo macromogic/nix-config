@@ -57,9 +57,12 @@
           system = "aarch64-darwin";
           username = "macmo";
           role = "local";
-          repo = "Documents/dev/nix-config";
+          repo = "dev/nix-config";
           # Existing checkout, kept where it already was.
-          modules = [{ nixConfig.clones.ytcc.path = "Documents/dev/ytcc"; }];
+          modules = [
+            ./home/hosts/mac.nix
+            { nixConfig.clones.ytcc.path = "dev/ytcc"; }
+          ];
         };
 
         "wh25@tdx" = {

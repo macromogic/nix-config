@@ -41,6 +41,11 @@ Whether you may manage git is decided per project. By default you may not.
   suggest a commit message, but leave committing to me.
 - Even with approval: follow the repository's commit style, never commit
   secrets, and never force-push or push to a branch I didn't name.
+- Before committing, `git fetch` and stop if the branch is behind its
+  upstream (some repos get daily bot commits). Write the message to a file
+  with a blank line between subject and body, and check the subject with
+  `git log -1 --format=%s`. Never chain commit and push in one command;
+  check each result before the next step.
 
 ## Installing software
 - Never install software on your own: no apt, brew, `pip install --user`,
