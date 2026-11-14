@@ -117,6 +117,16 @@ in
         url = "https://github.com/macromogic/ytcc.git";
         skillDirs = [ ".agents/skills" ];
       };
+
+      # Manim educational-video skill and CLI; Mac only (needs LaTeX). Its
+      # SKILL.md sits at the repo root and refers to files beside it, so
+      # the whole checkout is linked as the skill below, not via skillDirs.
+      myanim = {
+        enable = lib.mkDefault false;
+        path = lib.mkDefault "myanim";
+        url = "https://github.com/macromogic/myanim.git";
+        branch = "main";
+      };
     };
 
     home.packages = [ tool ]
@@ -131,9 +141,27 @@ in
         export UV_PROJECT_ENVIRONMENT="''${XDG_CACHE_HOME:-$HOME/.cache}/ytcc/venv"
         exec ${pkgs.uv}/bin/uv run --quiet --project "$HOME/${cfg.ytcc.path}" ytcc "$@"
       '')
+    ]
+      ++ lib.optionals (enabled ? myanim) [
+      pkgs.ffmpeg-headless
+      # Runs myanim from its checkout (venv in the checkout's .venv). pycairo
+      # has no macOS wheel, so uv builds it: give it cairo, pkg-config and
+      # ninja from Nix rather than Homebrew. LaTeX comes from MacTeX.
+      (pkgs.writeShellScriptBin "myanim" ''
+        export PATH="${lib.makeBinPath [ pkgs.pkg-config pkgs.ninja ]}:$PATH"
+        export PKG_CONFIG_PATH="${lib.makeSearchPath "lib/pkgconfig" [ pkgs.cairo.dev ]}''${PKG_CONFIG_PATH:+:$PKG_CONFIG_PATH}"
+        exec ${pkgs.uv}/bin/uv run --quiet --project "$HOME/${cfg.myanim.path}" myanim "$@"
+      '')
     ];
 
     xdg.configFile."nix-config/clones".source = manifest;
+
+    home.file = lib.optionalAttrs (enabled ? myanim) (lib.genAttrs
+      [ ".claude/skills/myanim" ".codex/skills/myanim" ]
+      (_: {
+        source = config.lib.file.mkOutOfStoreSymlink
+          "${config.home.homeDirectory}/${cfg.myanim.path}";
+      }));
 
     # Never fails the switch: problems are reported, not fatal.
     home.activation.clones = lib.hm.dag.entryAfter [ "writeBoundary" ] ''
