@@ -3,8 +3,10 @@
 # by a launchd agent / systemd user timer (autoupdate.nix).
 # Skips when the checkout has uncommitted changes or unpushed commits; on a
 # failed switch, resets the checkout so the next run retries. Posts to
-# Discord, when DISCORD_WEBHOOK_NIX_CONFIG is set in ~/.zshrc_secrets, on a
-# failed switch, a failed checkout hook or a t3-server left on an old t3.
+# Discord on a failed switch, a failed checkout hook or a t3-server left on an
+# old t3: through Switchboard (topic nix-config) when switchboard-notify is
+# configured and the send works, else to DISCORD_WEBHOOK_NIX_CONFIG from
+# ~/.zshrc_secrets.
 
 repo=${NIX_CONFIG_REPO:?} name=${NIX_CONFIG_NAME:?}
 # Timers start with a bare PATH; home-manager and nix live outside it.
@@ -14,6 +16,14 @@ log() { printf '%s %s\n' "$(date '+%F %T')" "$*"; }
 
 notify() {
   [[ ${AUTOUPDATE_NOTIFY:-1} == 1 ]] || return 0
+  if command -v switchboard-notify >/dev/null; then
+    local status=0
+    switchboard-notify -t nix-config -l "${3:-warning}" -T "$1" "$2" >/dev/null 2>&1 || status=$?
+    [[ $status == 0 ]] && return 0
+    # 3: not set up on this machine. Otherwise Switchboard is down or refused
+    # it; either way, fall back to the webhook so the alert isn't lost.
+    [[ $status == 3 ]] || log "Switchboard notification failed ($status); trying the webhook: $1"
+  fi
   local webhook=
   if [[ -f $HOME/.zshrc_secrets ]]; then
     # shellcheck source=/dev/null
@@ -85,7 +95,7 @@ update_nix_config() {
     git reset --quiet --keep "$before"
     log "switch to ${target:0:7} failed; checkout reset to ${before:0:7}"
     notify "nix-config update failed on $(hostname -s)" \
-      "home-manager switch to ${target:0:7} failed; checkout left at ${before:0:7}. See the autoupdate log."
+      "home-manager switch to ${target:0:7} failed; checkout left at ${before:0:7}. See the autoupdate log." error
     return 1
   fi
 }
@@ -99,6 +109,6 @@ set -e
 clones=$(nix-config-clones pull 2>&1) || clones+=$'\n'$(log "clones: pull failed")
 printf '%s\n' "$clones"
 if failed=$(grep -E 'clones: .*(hook|pull) failed' <<<"$clones"); then
-  notify "nix-config clones failed on $(hostname -s)" "$failed"
+  notify "nix-config clones failed on $(hostname -s)" "$failed" error
 fi
 exit "$status"

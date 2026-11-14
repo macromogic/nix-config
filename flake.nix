@@ -40,6 +40,7 @@
             ./home/common.nix
             ./home/autoupdate.nix
             ./home/clones.nix
+            ./home/switchboard.nix
             ./home/roles/${role}.nix
             (if isDarwin then ./home/platforms/darwin.nix else ./home/platforms/linux.nix)
             {
