@@ -11,13 +11,27 @@ server. It works from any shell on any of their machines.
 ```sh
 switchboard-notify -t <topic> [-l info|success|warning|error] [-T "<title>"] "<message>"
 some-command 2>&1 | tail -20 | switchboard-notify -t <topic> -l error -T "<title>"
+switchboard-notify -L    # list the channels and forum posts you can send to
 ```
 
-- **Topic** (`-t`): each topic is its own Discord forum post, opened on
-  first use. Use a short, stable name for the job, in lowercase words joined
-  by `-` (e.g. `paper-build`, `nightly-eval`), and reuse it every time that
-  job reports, so its history stays in one post. Don't invent a new topic per
-  message.
+## Where the message goes
+
+- **If the user said where, send exactly there.** A channel name goes to
+  `-c <channel>`; a topic name, a post id or a Discord post link
+  (`https://discord.com/channels/...`) goes to `-t` as given. Don't rename,
+  "fix" or replace it. If it is rejected, report the error instead of
+  picking somewhere else.
+- **If they named it loosely** ("the eval post", "weekly brief"), run
+  `switchboard-notify -L` and use the matching channel or post. Ask if
+  nothing matches clearly.
+- **Otherwise use a topic** (`-t`): each topic is its own Discord forum post,
+  opened on first use. Pick a short, stable name for the job in lowercase
+  words joined by `-` (e.g. `paper-build`, `nightly-eval`), check `-L` for an
+  existing one that fits, and reuse it every time that job reports so its
+  history stays in one post. Don't invent a new topic per message.
+
+## What to send
+
 - **Level** (`-l`): `success` or `error` for a finished job, `warning` for
   something that needs a look, `info` otherwise.
 - **Message**: Markdown, ideally under ~1500 characters (longer is cut
