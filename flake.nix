@@ -63,7 +63,7 @@
           modules = [
             ./home/hosts/mac.nix
             { nixConfig.clones.ytcc.path = "dev/ytcc"; }
-            { nixConfig.clones.myanim = { enable = true; path = "dev/myanim"; }; }
+            { nixConfig.clones.myanim.path = "dev/myanim"; }
           ];
         };
 

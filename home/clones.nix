@@ -13,6 +13,31 @@ let
   enabled = lib.filterAttrs (_: c: c.enable) cfg;
 
   hook = name: text: pkgs.writeShellScript "clone-hook-${name}" text;
+  inherit (pkgs.stdenv.hostPlatform) isLinux;
+
+  # Build environment for pycairo and manimpango: PKG_CONFIG_PATH and
+  # CPATH for cairo and pango and everything they require, as the setup
+  # hooks collect it inside a Nix build (pkg-config alone leaves out the
+  # headers of private requirements such as xcb, which cairo's headers
+  # include). Sourced by the myanim wrapper.
+  myanimBuildEnv = pkgs.runCommand "myanim-build-env"
+    {
+      nativeBuildInputs = [ pkgs.pkg-config ];
+      buildInputs = with pkgs; [ cairo pango ];
+    } ''
+    pkg-config --exists pangocairo cairo
+    for v in ''${!PKG_CONFIG_PATH*}; do p+=''${p:+:}''${!v}; done
+    IFS=:
+    for d in $p; do
+      d=''${d%/*/pkgconfig}/include
+      if [ -d "$d" ]; then inc+=''${inc:+:}$d; fi
+    done
+    {
+      echo "PKG_CONFIG_PATH=$p\''${PKG_CONFIG_PATH:+:\$PKG_CONFIG_PATH}"
+      echo "CPATH=$inc\''${CPATH:+:\$CPATH}"
+      echo "export PKG_CONFIG_PATH CPATH"
+    } >$out
+  '';
 
   manifest = pkgs.writeText "nix-config-clones" (lib.concatStrings (lib.mapAttrsToList
     (name: c: lib.concatStringsSep "\t" [
@@ -118,11 +143,10 @@ in
         skillDirs = [ ".agents/skills" ];
       };
 
-      # Manim educational-video skill and CLI; Mac only (needs LaTeX). Its
-      # SKILL.md sits at the repo root and refers to files beside it, so
-      # the whole checkout is linked as the skill below, not via skillDirs.
+      # Manim educational-video skill and CLI. Its SKILL.md sits at the
+      # repo root and refers to files beside it, so the whole checkout is
+      # linked as the skill below, not via skillDirs.
       myanim = {
-        enable = lib.mkDefault false;
         path = lib.mkDefault "myanim";
         url = "https://github.com/macromogic/myanim.git";
         branch = "main";
@@ -145,14 +169,27 @@ in
       ++ lib.optionals (enabled ? myanim) [
       pkgs.ffmpeg-headless
       # Runs myanim from its checkout (venv in the checkout's .venv). pycairo
-      # has no macOS wheel, so uv builds it: give it cairo, pkg-config and
-      # ninja from Nix rather than Homebrew. LaTeX comes from MacTeX.
-      (pkgs.writeShellScriptBin "myanim" ''
-        export PATH="${lib.makeBinPath [ pkgs.pkg-config pkgs.ninja ]}:$PATH"
-        export PKG_CONFIG_PATH="${lib.makeSearchPath "lib/pkgconfig" [ pkgs.cairo.dev ]}''${PKG_CONFIG_PATH:+:$PKG_CONFIG_PATH}"
+      # (and manimpango on Linux) has no wheel, so uv builds it: give it
+      # cairo, pango, pkg-config and ninja from Nix rather than Homebrew or
+      # apt. On Linux the Python and compiler come from Nix too: uv's own
+      # Python uses the system glibc, older than the one Nix's cairo needs.
+      (pkgs.writeShellScriptBin "myanim" (''
+        export PATH="${lib.makeBinPath ([ pkgs.pkg-config pkgs.ninja ]
+          ++ lib.optional isLinux pkgs.stdenv.cc)}:$PATH"
+        . ${myanimBuildEnv}
+      '' + lib.optionalString isLinux ''
+        export UV_PYTHON=${pkgs.python312}/bin/python3.12 UV_PYTHON_DOWNLOADS=never
+        # manylinux wheels (numpy) expect libstdc++ and zlib from the system.
+        export LD_LIBRARY_PATH="${lib.makeLibraryPath [ pkgs.stdenv.cc.cc.lib pkgs.zlib ]}''${LD_LIBRARY_PATH:+:$LD_LIBRARY_PATH}"
+      '' + ''
         exec ${pkgs.uv}/bin/uv run --quiet --project "$HOME/${cfg.myanim.path}" myanim "$@"
-      '')
-    ];
+      ''))
+    ]
+      # MathTex on Linux; the Mac uses MacTeX. Manim's template needs
+      # standalone and preview, components/style.py libertinus-type1, which
+      # loads fontaxes without declaring it.
+      ++ lib.optional ((enabled ? myanim) && isLinux) (pkgs.texliveSmall.withPackages
+      (ps: with ps; [ standalone preview libertinus-type1 fontaxes dvisvgm ]));
 
     xdg.configFile."nix-config/clones".source = manifest;
 
