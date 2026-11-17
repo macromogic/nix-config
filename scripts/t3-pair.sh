@@ -36,6 +36,8 @@ if [[ -f $HOME/.config/t3-server.env ]]; then
   . "$HOME/.config/t3-server.env"
   set +a
 fi
+# As in the unit: never let t3 pick another port.
+export T3CODE_PORT=${T3CODE_PORT:-3773}
 
 sessions() {
   t3 auth session list --json |

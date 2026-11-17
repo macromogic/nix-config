@@ -4,7 +4,10 @@
 # Opt-in per machine, since configs are shared across servers: it starts
 # only where ~/.config/t3-server.env exists. That file may set
 # T3CODE_PORT (default 3773) to avoid another user's server on a shared
-# host; an empty file is enough otherwise. The server listens on loopback
+# host; an empty file is enough otherwise. The port is always set: without
+# it t3 picks the first free port from 3773 (on WSL, also one Windows isn't
+# using), so a restart racing the old process moves it off the port that
+# Tailscale Serve forwards to. The server listens on loopback
 # only; reach it over the tailnet with `t3 pair --tailscale`, which sets up
 # Tailscale Serve (HTTPS, tailnet only) and prints a pairing QR code.
 #
@@ -30,6 +33,8 @@ lib.mkIf pkgs.stdenv.hostPlatform.isLinux {
       Environment = [
         "PATH=%h/.nix-profile/bin:/nix/var/nix/profiles/default/bin:/usr/local/bin:/usr/bin:/bin"
         "T3CODE_HOST=127.0.0.1"
+        # EnvironmentFile, read after this, overrides it.
+        "T3CODE_PORT=3773"
         "T3CODE_TELEMETRY_ENABLED=false"
       ];
       EnvironmentFile = "%h/.config/t3-server.env";
