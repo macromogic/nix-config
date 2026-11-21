@@ -35,6 +35,11 @@ let
   # rather than quietly going back to 30 days. dist is copied, not linked:
   # node resolves symlinked modules to their target and would load the
   # original bundle. Wrapped as llm-agents wraps it, with its own node.
+  # This package already honors T3CODE_DEV_MANAGED_POLICY_PATH in all builds.
+  # Default it in the wrapper so CLI and user services use a per-user policy,
+  # even without a login shell. A missing file means no managed policy;
+  # callers can still override the path. Check the bundle at build time so
+  # an upstream change cannot silently restore the machine-wide policy.
   t3code =
     let
       unwrapped = agents.t3code.unwrapped;
@@ -53,8 +58,11 @@ let
       bundle=$(grep -lF "$old" $dst/dist/*.mjs)
       [ "$(echo "$bundle" | wc -l)" -eq 1 ] || { echo "t3code: session TTL constant not found exactly once" >&2; exit 1; }
       substituteInPlace "$bundle" --replace-fail "$old" 'const DEFAULT_SESSION_TTL = days(730);'
+      policy='const devPath = yield* option(String$1("T3CODE_DEV_MANAGED_POLICY_PATH")).pipe(orElseSucceed(() => none$1()));'
+      [ "$(grep -F "$policy" $dst/dist/*.mjs | wc -l)" -eq 1 ] || { echo "t3code: unconditional managed policy override not found exactly once; review upstream" >&2; exit 1; }
       makeWrapper ${lib.getExe node} $out/bin/t3 \
         --add-flags $dst/dist/bin.mjs \
+        --set-default T3CODE_DEV_MANAGED_POLICY_PATH ${lib.escapeShellArg "${config.xdg.configHome}/t3/managed-policy.json"} \
         --prefix PATH : ${lib.makeBinPath agents.t3code.providerPackages}
       ln -s ${unwrapped}/share $out/share
     '';
