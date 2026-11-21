@@ -10,9 +10,11 @@ This puts them back. Installed by home/platforms/darwin.nix as
 
 Only the rule features the config uses are understood: if.app-id, if.workspace,
 if.app-name-regex-substring, if.window-title-regex-substring,
-check-further-callbacks, and the 'layout ...' and
-'move-node-to-workspace ...' commands. A rule with any other condition never
-matches here.
+check-further-callbacks, and the 'layout ...', 'move-node-to-workspace ...'
+and 'exec-and-forget ...' commands. A rule with any other condition never
+matches here. exec-and-forget commands run with AEROSPACE_WINDOW_ID set and
+AEROSPACE_ASSIGN_NO_PROMPT=1, so the assign script applies saved choices
+without asking.
 """
 
 import json
@@ -39,6 +41,9 @@ def aerospace(*args, dry_run=False):
 
 
 def matches(condition, window):
+    # The string form only appears as the catch-all `if = 'true'`.
+    if isinstance(condition, str):
+        return condition.strip() == "true"
     for key, value in condition.items():
         if key == "app-id":
             ok = window["app-bundle-id"] == value
@@ -63,6 +68,14 @@ def apply(command, window_id, dry_run):
         aerospace("layout", "--window-id", window_id, *arg.split(), dry_run=dry_run)
     elif verb == "move-node-to-workspace":
         aerospace("move-node-to-workspace", "--window-id", window_id, arg, dry_run=dry_run)
+    elif verb == "exec-and-forget":
+        # The catch-all rule runs the assign script; here it applies saved
+        # choices only, rather than asking about every open window.
+        env = {**os.environ, "AEROSPACE_WINDOW_ID": window_id, "AEROSPACE_ASSIGN_NO_PROMPT": "1"}
+        if dry_run:
+            print(f"AEROSPACE_WINDOW_ID={window_id} AEROSPACE_ASSIGN_NO_PROMPT=1 {arg}")
+        else:
+            subprocess.run(["/bin/bash", "-c", arg], env=env)
     else:
         print(f"skipping unsupported command: {command}", file=sys.stderr)
 

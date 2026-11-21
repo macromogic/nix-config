@@ -48,6 +48,7 @@ COMMANDS = {
     "close-all-windows-but-current": ("Service mode", "Close all other windows"),
     "join-with": ("Service mode", "Join with neighbour"),
     "exec-and-forget ~/.config/aerospace/regroup": ("Service mode", "Put windows back in their workspaces"),
+    "exec-and-forget ~/.config/aerospace/assign --focused": ("Service mode", "Choose where this app's windows go"),
     "enable toggle": ("Service mode", "Turn window management off / on"),
 }
 MONITORS = {"built-in": "laptop", "main": "main", "secondary": "secondary"}

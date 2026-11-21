@@ -24,6 +24,11 @@
   xdg.configFile."aerospace/regroup".source = pkgs.writeScript "aerospace-regroup" (
     "#!${pkgs.python3}/bin/python3 -I\n" + builtins.readFile ./../../scripts/aerospace-regroup.py
   );
+  # Asks where an app without a rule goes and remembers it; run by the
+  # config's last on-window-detected rule as ~/.config/aerospace/assign.
+  xdg.configFile."aerospace/assign".source = pkgs.writeScript "aerospace-assign" (
+    "#!${pkgs.python3}/bin/python3 -I\n" + builtins.readFile ./../../scripts/aerospace-assign.py
+  );
   # Raycast script command listing the AeroSpace keys, regenerated from the
   # config. Raycast needs ~/.config/raycast/scripts added once under
   # Settings > Extensions > Script Commands.
