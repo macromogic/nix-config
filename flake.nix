@@ -12,7 +12,7 @@
       url = "github:nix-community/nix-index-database";
       inputs.nixpkgs.follows = "nixpkgs";
     };
-    # Agent CLIs (claude-code, codex, opencode), updated daily upstream.
+    # Agent CLIs (claude-code, codex, opencode, antigravity-cli), updated daily upstream.
     # Deliberately not following our nixpkgs, so builds match
     # cache.numtide.com.
     llm-agents.url = "github:numtide/llm-agents.nix";

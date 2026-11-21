@@ -20,6 +20,17 @@ let
       wrapProgram $out/bin/claude --set-default CLAUDE_CODE_CERT_STORE bundled,system
     '';
   };
+  # Antigravity CLI (`agy`). Its background updater cannot write to the
+  # store; turn it off in the binary itself so it holds however agy is
+  # started (T3 Code, herdr), not only from a fresh shell.
+  antigravity-cli = pkgs.symlinkJoin {
+    name = "antigravity-cli-${agents.antigravity-cli.version}";
+    paths = [ agents.antigravity-cli ];
+    nativeBuildInputs = [ pkgs.makeWrapper ];
+    postBuild = ''
+      wrapProgram $out/bin/agy --set-default AGY_CLI_DISABLE_AUTO_UPDATE 1
+    '';
+  };
   # OpenCode 2.x, which T3 Code wants (>= 2.0.18). llm-agents installs it as
   # `opencode2` to coexist with its 1.x package; we only carry 2.x, so give
   # it upstream's name back. 2.x converts the 1.x database in place.
@@ -97,6 +108,7 @@ in
     })
     claude-code
     opencode
+    antigravity-cli # `agy`
     t3code # `t3`: T3 Code server and CLI
     (writeShellApplication {
       name = "t3-pair";
@@ -183,7 +195,7 @@ in
   # Leftover installer copies in ~/.local/bin win over the Nix ones on PATH
   # (that dir must stay first for host toolchains), so point them out.
   home.activation.agentCliLeftovers = lib.hm.dag.entryAfter [ "writeBoundary" ] ''
-    for f in "$HOME"/.local/bin/{claude,codex,opencode} "$HOME"/.opencode/bin/opencode \
+    for f in "$HOME"/.local/bin/{claude,codex,opencode,agy} "$HOME"/.opencode/bin/opencode \
              "$HOME"/.nvm/versions/node/*/bin/{claude,codex,opencode}; do
       if [ -e "$f" ]; then
         echo "agent CLIs: leftover installer copy may shadow the Nix one: $f"
