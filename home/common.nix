@@ -115,6 +115,11 @@ in
       runtimeInputs = [ t3code jq ];
       text = builtins.readFile ./../scripts/t3-pair.sh;
     })
+    (writeShellApplication {
+      name = "t3-update";
+      runtimeInputs = [ openssh ];
+      text = builtins.readFile ./../scripts/t3-update.sh;
+    })
   ] ++ (with agents; [
     codex
   ]);
