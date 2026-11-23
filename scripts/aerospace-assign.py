@@ -15,6 +15,9 @@ to that app's later windows without asking. Cancel saves nothing, but stops
 the asking until the app quits; its next launch asks again. To be asked again, delete the app's entry from that file;
 to make a choice part of the config, add a rule for the app, which then wins.
 
+After the dialog, focus returns to the window asked about, or, if it moved to
+another workspace, to the window that had focus before the dialog.
+
 --focused asks about the focused window's app even if it already has a saved
 choice, saves the answer and applies it to all of the app's open windows;
 service mode a runs it. --no-prompt, or AEROSPACE_ASSIGN_NO_PROMPT=1, applies
@@ -174,6 +177,12 @@ def main(argv):
     window_id = str(window["window-id"])
     key = window["app-bundle-id"] or window["app-name"]
 
+    # The dialog activates System Events, which has no window, so when it
+    # closes macOS hands focus to a window of its choosing and the accordion
+    # shows that one. Remember what had focus to put it back.
+    before = list_windows("--focused")
+    before_id = str(before[0]["window-id"]) if before else None
+
     if focused and has_rule(config, window):
         tell(f"{window['app-name']} has a rule in aerospace.toml, which decides where it goes. "
              "Change it there.")
@@ -204,11 +213,30 @@ def main(argv):
                 snoozed = {k: p for k, p in snoozed.items() if str(p) in live}
                 snoozed[key] = pid
                 save(snoozed, SNOOZED)
+            refocus(None, window_id, before_id)
             return
         state[key] = {"app": window["app-name"], "action": action}
         save(state)
     for target in app_windows(window) if focused else [window_id]:
         apply(action, target)
+    refocus(action, window_id, before_id)
+
+
+def refocus(action, window_id, before_id):
+    """Give focus back after the dialog: to the window asked about if it
+    stays on this workspace, otherwise to what had focus before it opened."""
+    if action is None or not action.isdigit():
+        target = window_id
+    elif before_id and before_id != window_id:
+        target = before_id
+    else:
+        # The new window had focus itself. After the move AeroSpace already
+        # treats another window of this workspace as focused; make macOS agree.
+        now = list_windows("--focused")
+        if not now or str(now[0]["window-id"]) == window_id:
+            return
+        target = str(now[0]["window-id"])
+    aerospace("focus", "--window-id", target)
 
 
 if __name__ == "__main__":
