@@ -41,6 +41,7 @@
             ./home/autoupdate.nix
             ./home/clones.nix
             ./home/switchboard.nix
+            ./home/texlive.nix
             ./home/roles/${role}.nix
             (if isDarwin then ./home/platforms/darwin.nix else ./home/platforms/linux.nix)
             {
@@ -72,7 +73,10 @@
           username = "wh25";
           role = "remote";
           repo = "nix-config";
-          modules = [ ./home/shared-server.nix ];
+          modules = [
+            ./home/shared-server.nix
+            { nixConfig.texliveFull = true; }
+          ];
         };
 
         # Dev servers: one config per username, shared by every server
@@ -82,7 +86,10 @@
           username = "wh25";
           role = "remote";
           repo = "nix-config";
-          modules = [ ./home/shared-server.nix ];
+          modules = [
+            ./home/shared-server.nix
+            { nixConfig.texliveFull = true; }
+          ];
         };
 
         "macmo@remote" = {

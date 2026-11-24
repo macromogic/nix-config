@@ -187,8 +187,9 @@ in
     ]
       # MathTex on Linux; the Mac uses MacTeX. Manim's template needs
       # standalone and preview, components/style.py libertinus-type1, which
-      # loads fontaxes without declaring it.
-      ++ lib.optional ((enabled ? myanim) && isLinux) (pkgs.texliveSmall.withPackages
+      # loads fontaxes without declaring it. Not needed with the full
+      # TeX Live (texlive.nix), which has them all.
+      ++ lib.optional ((enabled ? myanim) && isLinux && !config.nixConfig.texliveFull) (pkgs.texliveSmall.withPackages
       (ps: with ps; [ standalone preview libertinus-type1 fontaxes dvisvgm ]));
 
     xdg.configFile."nix-config/clones".source = manifest;
